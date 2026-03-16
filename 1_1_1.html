@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1.1.1 Representation of points in n-space</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --notion-bg-main: #FFFFFF;
+            --notion-bg-sidebar: #F7F7F5;
+            --notion-hover-sidebar: #EFEFED;
+            --notion-hover-main: #F1F1EF;
+            --notion-text-primary: #37352F;
+            --notion-text-secondary: #787774;
+            --notion-text-placeholder: #9A9A97;
+            --notion-border: #E9E9E7;
+            --primary: #2383E2; /* Notion Blue */
+            --radius: 4px;
+        }
+        body {
+            background-color: var(--notion-bg-main);
+            color: var(--notion-text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            overflow: hidden;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-width: 280px;
+        }
+        #ui-layer > * { pointer-events: auto; }
+        .glass {
+            background: var(--notion-bg-main);
+            border: 1px solid var(--notion-border);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border-radius: var(--radius);
+            padding: 1rem;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--notion-border);
+            border-radius: 2px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--notion-text-secondary);
+            cursor: pointer;
+            border-radius: 50%;
+            border: 1px solid var(--notion-border);
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="canvas-container" class="absolute inset-0 w-full h-full"></div>
+    <div id="ui-layer">
+        <div class="glass flex flex-col gap-3">
+            <h1 class="text-sm font-semibold text-[--notion-text-primary] flex items-center gap-2">
+                <span class="w-4 h-4 rounded-sm bg-blue-500/10 flex items-center justify-center text-blue-600">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                </span>
+                Point Representation
+            </h1>
+            <p class="text-[11px] text-[--notion-text-secondary] leading-relaxed">Representing an ordered n-tuple (x, y, z) as a point in space.</p>
+            <!-- PREDICTION PROMPT -- answer BEFORE moving sliders -->
+            <div style="background:#fef9e7;border:1px solid #f5c518;border-radius:4px;padding:0.6rem 0.75rem;">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#b7860b;margin-bottom:4px;">&#x1F52E; Predict First</div>
+                <div style="font-size:11px;color:#555;line-height:1.5;">If you move all three sliders to their <strong>maximum</strong> value, where will point P appear relative to the origin? <em>Think before interacting.</em></div>
+            </div>
+            <div id="coord-display" class="p-2 bg-[--notion-bg-sidebar] rounded text-[11px] font-mono border border-[--notion-border] text-[--notion-text-secondary]">
+                P = (0.00, 0.00, 0.00)
+            </div>
+            <div class="flex flex-col gap-3 mt-1">
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-[--notion-text-placeholder]">
+                        <span>X Coordinate</span>
+                        <span id="x-val" class="font-mono">2.0</span>
+                    </div>
+                    <input type="range" id="x-slider" min="-5" max="5" step="0.1" value="2">
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-[--notion-text-placeholder]">
+                        <span>Y Coordinate</span>
+                        <span id="y-val" class="font-mono">1.5</span>
+                    </div>
+                    <input type="range" id="y-slider" min="-5" max="5" step="0.1" value="1.5">
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center text-[10px] uppercase font-bold tracking-wider text-[--notion-text-placeholder]">
+                        <span>Z Coordinate</span>
+                        <span id="z-val" class="font-mono">3.0</span>
+                    </div>
+                    <input type="range" id="z-slider" min="-5" max="5" step="0.1" value="3">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        camera.position.set(8, 8, 8);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        const gridHelper = new THREE.GridHelper(20, 20, 0xd1d1d1, 0xe9e9e7);
+        scene.add(gridHelper);
+        
+        function createAxis(color, direction) {
+            const material = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.5 });
+            const points = [new THREE.Vector3(0,0,0), direction.multiplyScalar(10)];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            return new THREE.Line(geometry, material);
+        }
+        scene.add(createAxis(0xff4444, new THREE.Vector3(1,0,0)));
+        scene.add(createAxis(0x44ff44, new THREE.Vector3(0,1,0)));
+        scene.add(createAxis(0x4444ff, new THREE.Vector3(0,0,1)));
+
+        const sphereGeo = new THREE.SphereGeometry(0.18, 32, 32);
+        const sphereMat = new THREE.MeshPhongMaterial({ color: 0x2383E2, shininess: 30 });
+        const point = new THREE.Mesh(sphereGeo, sphereMat);
+        scene.add(point);
+
+        const lineMat = new THREE.LineDashedMaterial({ color: 0x787774, dashSize: 0.2, gapSize: 0.1, opacity: 0.25, transparent: true });
+        const xLine = new THREE.Line(new THREE.BufferGeometry(), lineMat);
+        const yLine = new THREE.Line(new THREE.BufferGeometry(), lineMat);
+        const zLine = new THREE.Line(new THREE.BufferGeometry(), lineMat);
+        scene.add(xLine, yLine, zLine);
+        
+        const lights = [
+            new THREE.PointLight(0xffffff, 50, 100), 
+            new THREE.DirectionalLight(0xffffff, 1),
+            new THREE.AmbientLight(0xffffff, 0.6)
+        ];
+        lights[0].position.set(10, 15, 10);
+        lights[1].position.set(-5, 10, -5);
+        scene.add(...lights);
+
+        const xInput = document.getElementById('x-slider');
+        const yInput = document.getElementById('y-slider');
+        const zInput = document.getElementById('z-slider');
+        const xVal = document.getElementById('x-val');
+        const yVal = document.getElementById('y-val');
+        const zVal = document.getElementById('z-val');
+        const display = document.getElementById('coord-display');
+
+        function update() {
+            const x = parseFloat(xInput.value);
+            const y = parseFloat(yInput.value);
+            const z = parseFloat(zInput.value);
+            xVal.textContent = x.toFixed(1);
+            yVal.textContent = y.toFixed(1);
+            zVal.textContent = z.toFixed(1);
+            point.position.set(x, y, z);
+            display.textContent = `P = (${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)})`;
+            xLine.geometry.setFromPoints([new THREE.Vector3(x,0,z), new THREE.Vector3(x,y,z)]);
+            yLine.geometry.setFromPoints([new THREE.Vector3(x,y,0), new THREE.Vector3(x,y,z)]);
+            zLine.geometry.setFromPoints([new THREE.Vector3(0,y,z), new THREE.Vector3(x,y,z)]);
+            xLine.computeLineDistances(); yLine.computeLineDistances(); zLine.computeLineDistances();
+        }
+
+        [xInput, yInput, zInput].forEach(i => i.addEventListener('input', update));
+        update();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
