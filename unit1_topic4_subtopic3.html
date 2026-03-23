@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4.3 Linear Independence | Math 1041</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --glass: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.7);
+        }
+
+        .canvas-area {
+            background: #020617;
+            border-radius: 24px;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 400px;
+        }
+
+        .status-shelf {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+        }
+
+        .badge {
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .independent { background: var(--primary); color: white; }
+        .dependent { background: var(--danger); color: white; }
+
+        .det-box {
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: var(--warning);
+        }
+
+        .slider-wrap {
+            width: 100%;
+            text-align: center;
+        }
+
+        input[type="range"] {
+            width: 80%;
+            accent-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align:center; color: #34d399;">Linear Independence</h1>
+        <p style="text-align:center; opacity: 0.7;">Vectors are independent if they point in unique directions. If one is a scalar multiple of another, they are dependent.</p>
+
+        <div class="status-shelf">
+            <div>
+                <span id="statusBadge" class="badge independent">Linearly Independent</span>
+            </div>
+            <div class="det-box" id="detDisplay">
+                Determinant Area: 1.00
+            </div>
+        </div>
+
+        <div class="canvas-area">
+            <canvas id="liCanvas"></canvas>
+        </div>
+
+        <div class="slider-wrap">
+            <label>Rotate Vector \(\mathbf{v}\)</label><br>
+            <input type="range" id="angleSlider" min="0" max="360" value="45" oninput="updateViz()">
+            <p style="margin-top: 1rem; font-style: italic; opacity: 0.5;">Hint: Set angle to 0°, 180°, or 360° to make them dependent.</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('liCanvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('angleSlider');
+        const badge = document.getElementById('statusBadge');
+        const detDisplay = document.getElementById('detDisplay');
+
+        const u = { x: 100, y: 0 }; // Vector u is fixed on X-axis
+
+        function updateViz() {
+            const angleDeg = parseFloat(slider.value);
+            const angleRad = (angleDeg * Math.PI) / 180;
+            
+            // Vector v rotates
+            const v = {
+                x: 100 * Math.cos(angleRad),
+                y: 100 * Math.sin(angleRad)
+            };
+
+            // Determinant/Area of Parallelogram in 2D
+            const area = Math.abs(u.x * v.y - u.y * v.x) / 100;
+            const isDependent = area < 10; // Threshold for simulation
+
+            badge.innerText = isDependent ? "Linearly Dependent" : "Linearly Independent";
+            badge.className = "badge " + (isDependent ? "dependent" : "independent");
+            detDisplay.innerText = `Area (Det): ${(area/100).toFixed(2)}`;
+
+            draw(v, isDependent);
+        }
+
+        function draw(v, isDependent) {
+            const w = canvas.width = canvas.offsetWidth;
+            const h = canvas.height = canvas.offsetHeight;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Axes
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.beginPath();
+            ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+            ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
+            ctx.stroke();
+
+            // Parallelogram shadow if independent
+            if (!isDependent) {
+                ctx.fillStyle = 'rgba(52, 211, 153, 0.1)';
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + u.x, cy - u.y);
+                ctx.lineTo(cx + u.x + v.x, cy - u.y - v.y);
+                ctx.lineTo(cx + v.x, cy - v.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Draw u
+            renderVector(cx, cy, u.x, -u.y, '#60a5fa', 'u');
+            // Draw v
+            renderVector(cx, cy, v.x, -v.y, isDependent ? '#ef4444' : '#34d399', 'v');
+        }
+
+        function renderVector(sx, sy, x, y, color, label) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 3;
+
+            const ex = sx + x;
+            const ey = sy + y;
+
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+
+            const angle = Math.atan2(y, x);
+            ctx.beginPath();
+            ctx.translate(ex, ey);
+            ctx.rotate(angle);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-12, -6);
+            ctx.lineTo(-12, 6);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px Inter';
+            ctx.fillText(label, ex + 10, ey);
+        }
+
+        window.addEventListener('resize', updateViz);
+        updateViz();
+    </script>
+</body>
+</html>
