@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4.1 Linear Combinations & Span | Math 1041</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --bg: #0f172a;
+            --glass: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.7);
+        }
+
+        .main-viz {
+            background: #020617;
+            border-radius: 24px;
+            margin: 2rem 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 500px;
+        }
+
+        .ui-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .slider-group {
+            background: rgba(255,255,255,0.03);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary);
+        }
+
+        .math-box {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 1.5rem;
+            border-radius: 16px;
+            text-align: center;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-toggle {
+            grid-column: 1 / -1;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-toggle:hover { opacity: 0.9; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align:center; background: linear-gradient(to right, #818cf8, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem;">Linear Combinations & Span</h1>
+        <p style="text-align:center; opacity: 0.6;">Vary the scalars \(\alpha\) and \(\beta\) to see the resulting vector \(\mathbf{w} = \alpha\mathbf{u} + \beta\mathbf{v}\).</p>
+
+        <div class="main-viz">
+            <canvas id="spanCanvas"></canvas>
+            <div style="position: absolute; top: 1rem; left: 1rem; background: rgba(0,0,0,0.5); padding: 0.5rem 1rem; border-radius: 8px;">
+                <span style="color: #818cf8;">● \(\mathbf{u}\)</span>
+                <span style="color: #c084fc; margin-left: 1rem;">● \(\mathbf{v}\)</span>
+                <span style="color: #f472b6; margin-left: 1rem;">● Resultant \(\mathbf{w}\)</span>
+            </div>
+        </div>
+
+        <div class="ui-panel">
+            <div class="slider-group">
+                <div class="slider-label"><span>Scalar \(\alpha\)</span> <span id="alphaVal">1.0</span></div>
+                <input type="range" id="alphaSlider" min="-2" max="2" step="0.1" value="1" oninput="updateViz()">
+                
+                <div class="slider-label" style="margin-top: 1.5rem;"><span>Scalar \(\beta\)</span> <span id="betaVal">1.0</span></div>
+                <input type="range" id="betaSlider" min="-2" max="2" step="0.1" value="1" oninput="updateViz()">
+            </div>
+
+            <div class="math-box" id="resultEqn">
+                \[ \mathbf{w} = 1.0\mathbf{u} + 1.0\mathbf{v} \]
+            </div>
+
+            <button class="btn-toggle" onclick="toggleSpan()">Visualize Entire Span (The Spanning Plane)</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('spanCanvas');
+        const ctx = canvas.getContext('2d');
+        let showPlane = false;
+
+        const u = { x: 80, y: -40 };
+        const v = { x: 40, y: 70 };
+
+        function updateViz() {
+            const alpha = parseFloat(document.getElementById('alphaSlider').value);
+            const beta = parseFloat(document.getElementById('betaSlider').value);
+            
+            document.getElementById('alphaVal').innerText = alpha.toFixed(1);
+            document.getElementById('betaVal').innerText = beta.toFixed(1);
+            document.getElementById('resultEqn').innerHTML = `\\[ \\mathbf{w} = ${alpha.toFixed(1)}\\mathbf{u} + ${beta.toFixed(1)}\\mathbf{v} \\]`;
+            MathJax.typesetPromise();
+            
+            draw(alpha, beta);
+        }
+
+        function toggleSpan() {
+            showPlane = !showPlane;
+            updateViz();
+        }
+
+        function draw(a, b) {
+            const w = canvas.width = canvas.offsetWidth;
+            const h = canvas.height = canvas.offsetHeight;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Grid/Axes
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.beginPath();
+            for(let i=-20; i<=20; i++) {
+                ctx.moveTo(0, cy + i*40); ctx.lineTo(w, cy + i*40);
+                ctx.moveTo(cx + i*40, 0); ctx.lineTo(cx + i*40, h);
+            }
+            ctx.stroke();
+
+            if (showPlane) {
+                ctx.fillStyle = 'rgba(129, 140, 248, 0.15)';
+                ctx.beginPath();
+                ctx.moveTo(cx - 500, cy - 300);
+                ctx.lineTo(cx + 500, cy - 100);
+                ctx.lineTo(cx + 500, cy + 300);
+                ctx.lineTo(cx - 500, cy + 100);
+                ctx.fill();
+            }
+
+            // Draw u and v
+            renderVector(cx, cy, u.x, u.y, '#818cf8', 'u');
+            renderVector(cx, cy, v.x, v.y, '#c084fc', 'v');
+
+            // Draw alpha*u and beta*v shadows
+            renderVector(cx, cy, u.x * a, u.y * a, 'rgba(129, 140, 248, 0.3)', '', true);
+            renderVector(cx + u.x * a, cy + u.y * a, v.x * b, v.y * b, 'rgba(192, 132, 252, 0.3)', '', true);
+
+            // Draw resultant w
+            renderVector(cx, cy, u.x * a + v.x * b, u.y * a + v.y * b, '#f472b6', 'w', false, true);
+        }
+
+        function renderVector(sx, sy, x, y, color, label, dashed=false, bold=false) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = bold ? 4 : 2;
+            if (dashed) ctx.setLineDash([5, 5]);
+
+            const ex = sx + x;
+            const ey = sy + y;
+
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+
+            const angle = Math.atan2(y, x);
+            ctx.beginPath();
+            ctx.translate(ex, ey);
+            ctx.rotate(angle);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-10, -5);
+            ctx.lineTo(-10, 5);
+            ctx.fill();
+            ctx.restore();
+
+            if (label) {
+                ctx.fillStyle = 'white';
+                ctx.font = '14px Inter';
+                ctx.fillText(label, ex + 5, ey - 5);
+            }
+        }
+
+        window.addEventListener('resize', updateViz);
+        updateViz();
+    </script>
+</body>
+</html>
