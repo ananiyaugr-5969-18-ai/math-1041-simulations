@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2.2 Examples of Vector Spaces | Math 1041</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --bg: #0f172a;
+            --glass: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.7);
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .display-area {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .axiom-logic {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            width: 100%;
+        }
+
+        /* Matrix Styling */
+        .matrix-ui {
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .matrix {
+            border-left: 3px solid white;
+            border-right: 3px solid white;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Universal Vector Spaces</h1>
+        <p style="text-align: center; opacity: 0.6; margin-bottom: 2rem;">A "Vector" isn't always a list of numbers; it can be anything that obeys the 10 axioms.</p>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('rn')">$\mathbb{R}^n$ (n-tuples)</button>
+            <button class="tab-btn" onclick="showTab('pn')">$P_n$ (Polynomials)</button>
+            <button class="tab-btn" onclick="showTab('mn')">$M_{mn}$ (Matrices)</button>
+        </div>
+
+        <div id="content" class="display-area">
+            <!-- Dynamic Content -->
+        </div>
+
+        <div id="logic" class="axiom-logic">
+            <!-- Axiom Logic Text -->
+        </div>
+    </div>
+
+    <script>
+        const content = document.getElementById('content');
+        const logic = document.getElementById('logic');
+
+        const data = {
+            rn: {
+                title: "n-dimensional Real Space",
+                html: `<div style="font-size: 1.5rem;">$\mathbf{u} = (x_1, x_2, \dots, x_n)$</div>`,
+                axiom: "**Multiplication Property:** Scalar multiplication \( k(x_1, x_2) = (kx_1, kx_2) \) preserves the dimensionality of the set."
+            },
+            pn: {
+                title: "Polynomial Space $P_n$",
+                html: `<div style="font-size: 1.5rem;">$p(x) = a_0 + a_1x + a_2x^2$</div><div style="margin-top: 1rem;">$q(x) = b_0 + b_1x + b_2x^2$</div>`,
+                axiom: "**Closure Principle:** Adding two polynomials results in a new polynomial where coefficients are $a_i + b_i$. The degree remains \(\leq n\)."
+            },
+            mn: {
+                title: "Matrix Space $M_{mn}$",
+                html: `<div class="matrix-ui"><div class="matrix"><span>1</span><span>0</span><span>0</span><span>1</span></div> + <div class="matrix"><span>a</span><span>b</span><span>c</span><span>d</span></div></div>`,
+                axiom: "**Closure Principle:** Matrix addition $(A+B)_{ij} = A_{ij} + B_{ij}$ ensures the result is still a matrix of the same dimensions."
+            }
+        };
+
+        function showTab(type) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            content.innerHTML = `<h3>${data[type].title}</h3>${data[type].html}`;
+            logic.innerHTML = data[type].axiom;
+            
+            MathJax.typesetPromise();
+        }
+
+        // Initialize
+        showTab('rn');
+    </script>
+</body>
+</html>
