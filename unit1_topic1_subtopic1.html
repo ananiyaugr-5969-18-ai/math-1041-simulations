@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1.1 Vector Space Axioms | Math 1041</title>
+    <!-- Use MathJax for high-quality LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --bg: #0f172a;
+            --glass: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
+        }
+
+        header { text-align: center; margin-bottom: 3rem; }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 0.5rem 0;
+            letter-spacing: -1px;
+        }
+
+        .subtitle { font-size: 1.1rem; opacity: 0.6; }
+
+        /* Axiom List Styling */
+        .axiom-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .group-title {
+            grid-column: 1 / -1;
+            font-size: 1.5rem;
+            color: #818cf8;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .axiom-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .axiom-item:hover {
+            background: rgba(255,255,255,0.08);
+            transform: scale(1.02);
+            border-color: var(--primary);
+        }
+
+        .axiom-item code {
+            display: block;
+            margin-top: 1rem;
+            color: #f472b6;
+            font-family: inherit;
+        }
+
+        /* Visualization Component */
+        .viz-window {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        canvas {
+            width: 100%;
+            height: 400px;
+            background: #020617;
+            border-radius: 16px;
+            cursor: crosshair;
+        }
+
+        .viz-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        button {
+            background: linear-gradient(to bottom right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        }
+
+        button:active { transform: translateY(0); }
+
+        .viz-legend {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .axiom-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>The Vector Space Axioms</h1>
+            <p class="subtitle">Section 4.1.1: Foundations of Linear Algebra</p>
+        </header>
+
+        <div class="axiom-section">
+            <div class="group-title">Addition Rules</div>
+            <div class="axiom-item">
+                <strong>(1) Closure</strong>
+                <p>Adding two vectors yields a vector in the same space.</p>
+                <code>\( \mathbf{u} + \mathbf{v} \in V \)</code>
+            </div>
+            <div class="axiom-item">
+                <strong>(2) Commutativity</strong>
+                <p>Order of addition doesn't matter.</p>
+                <code>\( \mathbf{u} + \mathbf{v} = \mathbf{v} + \mathbf{u} \)</code>
+            </div>
+            <div class="axiom-item">
+                <strong>(4) Zero Element</strong>
+                <p>Existence of an additive identity.</p>
+                <code>\( \mathbf{u} + \mathbf{0} = \mathbf{u} \)</code>
+            </div>
+        </div>
+
+        <div class="viz-window">
+            <h3 style="margin: 0; color: #a5b4fc;">Interactive Addition Visualization</h3>
+            <canvas id="vizCanvas"></canvas>
+            <div class="viz-controls">
+                <button onclick="handleAction('add')">Simulate Addition (\( \mathbf{u} + \mathbf{v} \))</button>
+                <button onclick="handleAction('scale')">Simulate Scaling (\( c\mathbf{u} \))</button>
+                <button onclick="resetViz()">Reset View</button>
+            </div>
+            <div class="viz-legend" id="vizLegend">
+                Vector <b>u</b> is Indigo, Vector <b>v</b> is Purple, Resultant is Pink.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('vizCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        let u = { x: 80, y: -60 };
+        let v = { x: 40, y: 100 };
+        let action = 'none';
+
+        function resize() {
+            width = canvas.width = canvas.offsetWidth;
+            height = canvas.height = canvas.offsetHeight;
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            const cx = width / 2;
+            const cy = height / 2;
+
+            // Draw Background Gridlines
+            ctx.setLineDash([]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = -10; i <= 10; i++) {
+                ctx.moveTo(0, cy + i * 40); ctx.lineTo(width, cy + i * 40);
+                ctx.moveTo(cx + i * 40, 0); ctx.lineTo(cx + i * 40, height);
+            }
+            ctx.stroke();
+
+            // Main Axes
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, cy); ctx.lineTo(width, cy);
+            ctx.moveTo(cx, 0); ctx.lineTo(cx, height);
+            ctx.stroke();
+
+            if (action === 'add') {
+                renderVector(cx, cy, u.x, u.y, '#818cf8', 'u');
+                renderVector(cx + u.x, cy + u.y, v.x, v.y, '#c084fc', 'v');
+                renderVector(cx, cy, u.x + v.x, u.y + v.y, '#f472b6', 'u + v', true);
+            } else if (action === 'scale') {
+                renderVector(cx, cy, u.x, u.y, '#818cf8', 'u');
+                renderVector(cx, cy, u.x * 2.5, u.y * 2.5, '#f472b6', '2.5u', true);
+            } else {
+                renderVector(cx, cy, u.x, u.y, '#818cf8', 'u');
+                renderVector(cx, cy, v.x, v.y, '#c084fc', 'v');
+            }
+        }
+
+        function renderVector(sx, sy, x, y, color, label, highlight = false) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = highlight ? 4 : 3;
+            if (highlight) ctx.shadowBlur = 15; ctx.shadowColor = color;
+
+            const ex = sx + x;
+            const ey = sy + y;
+
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+
+            // Arrow Head
+            const angle = Math.atan2(y, x);
+            ctx.beginPath();
+            ctx.translate(ex, ey);
+            ctx.rotate(angle);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-12, -6);
+            ctx.lineTo(-12, 6);
+            ctx.fill();
+            ctx.restore();
+
+            // Label
+            ctx.font = 'bold 16px Inter';
+            ctx.fillStyle = 'white';
+            ctx.fillText(label, ex + 5, ey - 5);
+        }
+
+        function handleAction(type) {
+            action = type;
+            draw();
+        }
+
+        function resetViz() {
+            action = 'none';
+            u = { x: 80, y: -60 };
+            v = { x: 40, y: 100 };
+            draw();
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+    </script>
+</body>
+</html>
