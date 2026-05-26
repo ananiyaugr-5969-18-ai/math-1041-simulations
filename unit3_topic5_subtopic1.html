@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infinite Limits & Asymptotes Simulation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --notion-bg-main:    #FFFFFF;
+      --notion-bg-sidebar: #F7F7F5;
+      --notion-hover-sidebar: #EFEFEE;
+      --notion-hover-main:    #F1F1EF;
+      --notion-text-primary:     #37352F;
+      --notion-text-secondary:   #787774;
+      --notion-text-placeholder: #9A9A97;
+      --notion-border: #E9E9E7;
+      --accent-color: #3e63dd;
+      --asymptote-color: #e5484d; /* Red dashed line */
+      --point-color: #3e63dd;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--notion-bg-main);
+      color: var(--notion-text-primary);
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background-color: var(--notion-bg-sidebar);
+      border: 1px solid var(--notion-border);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+    }
+
+    .prediction-prompt {
+      background-color: var(--notion-bg-main);
+      border-left: 4px solid var(--accent-color);
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--notion-text-primary);
+      font-weight: 400;
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 25px;
+    }
+
+    @media (min-width: 650px) {
+      .main-layout {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .canvas-container {
+      position: relative;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      width: 100%;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .value-display {
+      font-weight: 400;
+      color: var(--notion-text-secondary);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--notion-border);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .info-card {
+      padding: 15px;
+      border-radius: 8px;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .asymptote-label { color: var(--asymptote-color); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Infinite Limits and Asymptotes</h1>
+    
+    <div class="prediction-prompt">
+      <strong>Prediction Prompt:</strong> Before moving the slider: As the denominator (x - 2) approaches 0, what do you expect to happen to the value of f(x) = 1/(x-2)? Will it grow infinitely positive, infinitely negative, or both?
+    </div>
+
+    <div class="main-layout">
+      <div class="canvas-container">
+        <canvas id="simCanvas"></canvas>
+      </div>
+
+      <div class="controls-panel">
+        <div class="info-card">
+          Function: <strong>f(x) = 1 / (x - 2)</strong><br>
+          &bull; <span class="asymptote-label">Vertical Asymptote:</span> x = 2<br>
+          &bull; <span class="asymptote-label">Horizontal Asymptote:</span> y = 0
+        </div>
+
+        <div class="control-group">
+          <label for="xRange">
+            <span>Coordinate (x)</span>
+            <span class="value-display" id="xVal">2.50</span>
+          </label>
+          <input type="range" id="xRange" min="0.5" max="3.5" step="0.01" value="2.5">
+        </div>
+
+        <div class="info-card">
+          <strong>Interactive Tracker:</strong><br>
+          x = <span id="outX">2.50</span><br>
+          f(x) = <span id="outY">2.00</span><br>
+          Behavior: <span id="outBehavior">Approaching Asymptote</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const xRange = document.getElementById('xRange');
+    const xVal = document.getElementById('xVal');
+    const outX = document.getElementById('outX');
+    const outY = document.getElementById('outY');
+    const outBehavior = document.getElementById('outBehavior');
+
+    const asymptoteX = 2;
+
+    const f = (x) => {
+      if (Math.abs(x - asymptoteX) < 1e-4) return x > asymptoteX ? Infinity : -Infinity;
+      return 1 / (x - asymptoteX);
+    };
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      draw();
+    }
+
+    // Grid Coordinates
+    // x range [0, 4]
+    // y range [-6, 6]
+    const xMin = 0, xMax = 4;
+    const yMin = -6, yMax = 6;
+
+    function toCanvasX(x) {
+      const pct = (x - xMin) / (xMax - xMin);
+      return pct * canvas.width;
+    }
+
+    function toCanvasY(y) {
+      const pct = (y - yMin) / (yMax - yMin);
+      return canvas.height - (pct * canvas.height);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const width = canvas.width;
+      const height = canvas.height;
+      const scale = width / 400;
+      ctx.lineWidth = 1.5 * scale;
+
+      const cx = parseFloat(xRange.value);
+      xVal.innerText = cx.toFixed(2);
+      outX.innerText = cx.toFixed(2);
+
+      const cy = f(cx);
+      if (cy === Infinity || cy === -Infinity) {
+        outY.innerText = cy === Infinity ? "∞" : "-∞";
+        outBehavior.innerHTML = `<span style="color: var(--asymptote-color); font-weight: 700;">Division by Zero (Exploding to Infinity)</span>`;
+      } else {
+        outY.innerText = cy.toFixed(4);
+        if (Math.abs(cx - asymptoteX) < 0.25) {
+          outBehavior.innerHTML = `<span style="color: var(--asymptote-color); font-weight: 600;">Exploding towards ${cx > 2 ? '∞' : '-∞'}</span>`;
+        } else {
+          outBehavior.innerText = "Approaching Horizontal Asymptote (y = 0)";
+        }
+      }
+
+      // Draw Grid
+      ctx.strokeStyle = '#E9E9E7';
+      ctx.lineWidth = 0.7 * scale;
+      for (let x = 0; x <= 4; x += 0.5) {
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(x), 0);
+        ctx.lineTo(toCanvasX(x), height);
+        ctx.stroke();
+      }
+      for (let y = -6; y <= 6; y += 1) {
+        ctx.beginPath();
+        ctx.moveTo(0, toCanvasY(y));
+        ctx.lineTo(width, toCanvasY(y));
+        ctx.stroke();
+      }
+
+      // Draw Asymptotes
+      // Vertical x = 2
+      ctx.strokeStyle = '#e5484d';
+      ctx.lineWidth = 2 * scale;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(asymptoteX), 0);
+      ctx.lineTo(toCanvasX(asymptoteX), height);
+      ctx.stroke();
+
+      // Horizontal y = 0
+      ctx.strokeStyle = '#787774';
+      ctx.lineWidth = 1.2 * scale;
+      ctx.beginPath();
+      ctx.moveTo(0, toCanvasY(0));
+      ctx.lineTo(width, toCanvasY(0));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw Function Curves (Left and Right of asymptote)
+      ctx.strokeStyle = '#37352F';
+      ctx.lineWidth = 2.5 * scale;
+      
+      // Left branch: [0, 1.95]
+      ctx.beginPath();
+      for (let x = xMin; x <= 1.95; x += 0.01) {
+        const px = toCanvasX(x);
+        const py = toCanvasY(f(x));
+        if (x === xMin) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Right branch: [2.05, 4]
+      ctx.beginPath();
+      for (let x = 2.05; x <= xMax; x += 0.01) {
+        const px = toCanvasX(x);
+        const py = toCanvasY(f(x));
+        if (x === 2.05) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Draw sliding point
+      if (Math.abs(cx - asymptoteX) >= 0.02) {
+        ctx.fillStyle = '#3e63dd';
+        ctx.beginPath();
+        // Clamp canvas Y so point doesn't draw off-screen
+        const clampedY = Math.max(yMin, Math.min(yMax, cy));
+        ctx.arc(toCanvasX(cx), toCanvasY(clampedY), 6 * scale, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+
+      // Draw Labels
+      ctx.font = `600 ${11 * scale}px Outfit`;
+      ctx.fillStyle = '#e5484d';
+      ctx.fillText('VA: x = 2', toCanvasX(asymptoteX) + 10 * scale, 30 * scale);
+      
+      ctx.fillStyle = '#787774';
+      ctx.fillText('HA: y = 0', 10 * scale, toCanvasY(0) - 8 * scale);
+    }
+
+    xRange.addEventListener('input', draw);
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Initial setup
+    setTimeout(resizeCanvas, 100);
+  </script>
+</body>
+</html>

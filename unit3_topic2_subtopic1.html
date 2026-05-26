@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rational Limits & Removable Discontinuity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --notion-bg-main:    #FFFFFF;
+      --notion-bg-sidebar: #F7F7F5;
+      --notion-hover-sidebar: #EFEFEE;
+      --notion-hover-main:    #F1F1EF;
+      --notion-text-primary:     #37352F;
+      --notion-text-secondary:   #787774;
+      --notion-text-placeholder: #9A9A97;
+      --notion-border: #E9E9E7;
+      --accent-color: #3e63dd;
+      --hole-color: #e5484d;
+      --success-green: #0f766e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--notion-bg-main);
+      color: var(--notion-text-primary);
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background-color: var(--notion-bg-sidebar);
+      border: 1px solid var(--notion-border);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+    }
+
+    .prediction-prompt {
+      background-color: var(--notion-bg-main);
+      border-left: 4px solid var(--accent-color);
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--notion-text-primary);
+      font-weight: 400;
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 25px;
+    }
+
+    @media (min-width: 650px) {
+      .main-layout {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .canvas-container {
+      position: relative;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      width: 100%;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .value-display {
+      font-weight: 400;
+      color: var(--notion-text-secondary);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--notion-border);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .info-card {
+      padding: 15px;
+      border-radius: 8px;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .danger-text {
+      color: var(--hole-color);
+      font-weight: 700;
+    }
+
+    .success-text {
+      color: var(--success-green);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Rational Function Limits & The "Hole"</h1>
+    
+    <div class="prediction-prompt">
+      <strong>Prediction Prompt:</strong> Before moving the slider: If a function is mathematically undefined at a point, is it possible for the limit of the function to exist at that same point? Why?
+    </div>
+
+    <div class="main-layout">
+      <div class="canvas-container">
+        <canvas id="simCanvas"></canvas>
+      </div>
+
+      <div class="controls-panel">
+        <div class="info-card">
+          Function: <strong>f(x) = (x² + x - 2) / (x + 2)</strong><br>
+          For x &ne; -2: <strong>f(x) = x - 1</strong>
+        </div>
+
+        <div class="control-group">
+          <label for="xRange">
+            <span>Input Value (x)</span>
+            <span class="value-display" id="xVal">-1.50</span>
+          </label>
+          <input type="range" id="xRange" min="-3.5" max="-0.5" step="0.01" value="-1.5">
+        </div>
+
+        <div class="info-card">
+          <strong>Interactive Output:</strong><br>
+          x = <span id="outX">-1.50</span><br>
+          f(x) = <span id="outY">-2.50</span><br>
+          Status: <span id="outStatus">Normal Point</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const xRange = document.getElementById('xRange');
+    const xVal = document.getElementById('xVal');
+    const outX = document.getElementById('outX');
+    const outY = document.getElementById('outY');
+    const outStatus = document.getElementById('outStatus');
+
+    const holeX = -2;
+    const holeY = -3;
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      draw();
+    }
+
+    // Grid coordinates mapping
+    // x range [-4, 0]
+    // y range [-5, -1]
+    const xMin = -4, xMax = 0;
+    const yMin = -5, yMax = -1;
+
+    function toCanvasX(x) {
+      const pct = (x - xMin) / (xMax - xMin);
+      return pct * canvas.width;
+    }
+
+    function toCanvasY(y) {
+      const pct = (y - yMin) / (yMax - yMin);
+      return canvas.height - (pct * canvas.height);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const width = canvas.width;
+      const height = canvas.height;
+      const scale = width / 400;
+      ctx.lineWidth = 1.5 * scale;
+      
+      const cx = parseFloat(xRange.value);
+      xVal.innerText = cx.toFixed(2);
+      outX.innerText = cx.toFixed(2);
+
+      const eps = 0.005; // limit check for "undefined" hole
+      const isHole = Math.abs(cx - holeX) < eps;
+
+      if (isHole) {
+        outY.innerHTML = `<span class="danger-text">UNDEFINED (0/0)</span>`;
+        outStatus.innerHTML = `<span class="danger-text">Removable Discontinuity (Hole)</span>`;
+      } else {
+        const cy = cx - 1;
+        outY.innerText = cy.toFixed(2);
+        outStatus.innerHTML = `<span class="success-text">Approaching Limit L = -3.00</span>`;
+      }
+
+      // Draw Grid
+      ctx.strokeStyle = '#E9E9E7';
+      ctx.lineWidth = 0.7 * scale;
+      for (let x = xMin; x <= xMax; x += 0.5) {
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(x), 0);
+        ctx.lineTo(toCanvasX(x), height);
+        ctx.stroke();
+      }
+      for (let y = yMin; y <= yMax; y += 0.5) {
+        ctx.beginPath();
+        ctx.moveTo(0, toCanvasY(y));
+        ctx.lineTo(width, toCanvasY(y));
+        ctx.stroke();
+      }
+
+      // Axis lines
+      ctx.strokeStyle = '#9A9A97';
+      ctx.lineWidth = 1.2 * scale;
+      // Draw grid borders
+      ctx.strokeRect(0, 0, width, height);
+
+      // Draw function curve y = x - 1
+      ctx.strokeStyle = '#787774';
+      ctx.lineWidth = 3 * scale;
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(xMin), toCanvasY(xMin - 1));
+      ctx.lineTo(toCanvasX(xMax), toCanvasY(xMax - 1));
+      ctx.stroke();
+
+      // Draw hole at (-2, -3)
+      ctx.strokeStyle = '#e5484d';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.lineWidth = 3 * scale;
+      ctx.beginPath();
+      ctx.arc(toCanvasX(holeX), toCanvasY(holeY), 7 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw sliding point
+      if (!isHole) {
+        ctx.fillStyle = '#3e63dd';
+        ctx.beginPath();
+        ctx.arc(toCanvasX(cx), toCanvasY(cx - 1), 6 * scale, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Draw helper lines to axes
+        ctx.strokeStyle = 'rgba(62, 99, 221, 0.4)';
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1 * scale;
+        
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(cx), toCanvasY(cx - 1));
+        ctx.lineTo(toCanvasX(cx), height);
+        ctx.moveTo(toCanvasX(cx), toCanvasY(cx - 1));
+        ctx.lineTo(0, toCanvasY(cx - 1));
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Draw Labels
+      ctx.font = `600 ${11 * scale}px Outfit`;
+      ctx.fillStyle = '#e5484d';
+      ctx.fillText('Hole at (-2, -3)', toCanvasX(holeX) + 12 * scale, toCanvasY(holeY) + 4 * scale);
+
+      ctx.fillStyle = '#37352F';
+      ctx.font = `${10 * scale}px Outfit`;
+      ctx.fillText('x = -4', 5 * scale, height - 10 * scale);
+      ctx.fillText('x = 0', width - 35 * scale, height - 10 * scale);
+    }
+
+    xRange.addEventListener('input', draw);
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Initial setup
+    setTimeout(resizeCanvas, 100);
+  </script>
+</body>
+</html>

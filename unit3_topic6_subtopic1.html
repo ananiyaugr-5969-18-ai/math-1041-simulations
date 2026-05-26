@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intermediate Value Theorem (IVT)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --notion-bg-main:    #FFFFFF;
+      --notion-bg-sidebar: #F7F7F5;
+      --notion-hover-sidebar: #EFEFEE;
+      --notion-hover-main:    #F1F1EF;
+      --notion-text-primary:     #37352F;
+      --notion-text-secondary:   #787774;
+      --notion-text-placeholder: #9A9A97;
+      --notion-border: #E9E9E7;
+      --accent-color: #3e63dd;
+      --k-line-color: #e5484d; /* Red target line */
+      --c-point-color: #0f766e; /* Teal intersection point */
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--notion-bg-main);
+      color: var(--notion-text-primary);
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background-color: var(--notion-bg-sidebar);
+      border: 1px solid var(--notion-border);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+    }
+
+    .prediction-prompt {
+      background-color: var(--notion-bg-main);
+      border-left: 4px solid var(--accent-color);
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--notion-text-primary);
+      font-weight: 400;
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 25px;
+    }
+
+    @media (min-width: 650px) {
+      .main-layout {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .canvas-container {
+      position: relative;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      width: 100%;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .value-display {
+      font-weight: 400;
+      color: var(--notion-text-secondary);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--notion-border);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .info-card {
+      padding: 15px;
+      border-radius: 8px;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Intermediate Value Theorem (IVT)</h1>
+    
+    <div class="prediction-prompt">
+      <strong>Prediction Prompt:</strong> Before moving the slider: If a function is continuous on [a, b], does there exist a value c in (a, b) for *every* possible horizontal line y = k that lies between f(a) and f(b)? What if the function has a jump?
+    </div>
+
+    <div class="main-layout">
+      <div class="canvas-container">
+        <canvas id="simCanvas"></canvas>
+      </div>
+
+      <div class="controls-panel">
+        <div class="info-card">
+          Interval: <strong>[a, b] = [0.5, 4.5]</strong><br>
+          f(a) = <span id="valFa">1.50</span><br>
+          f(b) = <span id="valFb">3.50</span>
+        </div>
+
+        <div class="control-group">
+          <label for="kRange">
+            <span style="color: var(--k-line-color); font-weight:600;">Target Value (y = k)</span>
+            <span class="value-display" id="kVal">2.20</span>
+          </label>
+          <input type="range" id="kRange" min="1.4" max="3.6" step="0.05" value="2.2">
+        </div>
+
+        <div class="info-card">
+          <strong>IVT Verification:</strong><br>
+          For k = <span id="outK">2.20</span>, we find:<br>
+          <span style="color: var(--c-point-color); font-weight:700;">c = <span id="outC">2.45</span></span><br>
+          where <strong>f(c) = k</strong> is guaranteed by continuity!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const kRange = document.getElementById('kRange');
+    const kVal = document.getElementById('kVal');
+    const valFa = document.getElementById('valFa');
+    const valFb = document.getElementById('valFb');
+    const outK = document.getElementById('outK');
+    const outC = document.getElementById('outC');
+
+    const a = 0.5;
+    const b = 4.5;
+
+    // A smooth continuous cubic function: f(x) = 0.05*x^3 - 0.4*x^2 + 1.2*x + 1.0
+    const f = (x) => 0.05 * Math.pow(x, 3) - 0.4 * Math.pow(x, 2) + 1.2 * x + 1.0;
+
+    // Numerical solver (binary search) to find c such that f(c) = k in [a, b]
+    function solveC(k) {
+      let low = a;
+      let high = b;
+      for (let i = 0; i < 40; i++) {
+        let mid = (low + high) / 2;
+        let val = f(mid);
+        if (val < k) {
+          low = mid;
+        } else {
+          high = mid;
+        }
+      }
+      return low;
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      draw();
+    }
+
+    // Grid Coordinates
+    // x range [0, 5]
+    // y range [0, 4]
+    const xMin = 0, xMax = 5;
+    const yMin = 0, yMax = 4;
+
+    function toCanvasX(x) {
+      const pct = (x - xMin) / (xMax - xMin);
+      return pct * canvas.width;
+    }
+
+    function toCanvasY(y) {
+      const pct = (y - yMin) / (yMax - yMin);
+      return canvas.height - (pct * canvas.height);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const width = canvas.width;
+      const height = canvas.height;
+      const scale = width / 400;
+      ctx.lineWidth = 1.5 * scale;
+
+      const k = parseFloat(kRange.value);
+      kVal.innerText = k.toFixed(2);
+      outK.innerText = k.toFixed(2);
+
+      const fa = f(a);
+      const fb = f(b);
+      valFa.innerText = fa.toFixed(2);
+      valFb.innerText = fb.toFixed(2);
+
+      const c = solveC(k);
+      outC.innerText = c.toFixed(2);
+
+      // Grid lines
+      ctx.strokeStyle = '#E9E9E7';
+      ctx.lineWidth = 0.7 * scale;
+      for (let x = xMin; x <= xMax; x += 0.5) {
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(x), 0);
+        ctx.lineTo(toCanvasX(x), height);
+        ctx.stroke();
+      }
+      for (let y = yMin; y <= yMax; y += 0.5) {
+        ctx.beginPath();
+        ctx.moveTo(0, toCanvasY(y));
+        ctx.lineTo(width, toCanvasY(y));
+        ctx.stroke();
+      }
+
+      // Draw horizontal target line y = k
+      ctx.strokeStyle = '#e5484d';
+      ctx.lineWidth = 2 * scale;
+      ctx.beginPath();
+      ctx.moveTo(0, toCanvasY(k));
+      ctx.lineTo(width, toCanvasY(k));
+      ctx.stroke();
+
+      // Highlight target interval [a, b] on X axis
+      ctx.fillStyle = 'rgba(120, 119, 116, 0.08)';
+      ctx.fillRect(toCanvasX(a), 0, toCanvasX(b) - toCanvasX(a), height);
+
+      // Draw boundary line guidelines
+      ctx.strokeStyle = '#787774';
+      ctx.lineWidth = 1 * scale;
+      ctx.setLineDash([4, 4]);
+      
+      // x = a guide
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(a), 0);
+      ctx.lineTo(toCanvasX(a), height);
+      ctx.stroke();
+
+      // x = b guide
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(b), 0);
+      ctx.lineTo(toCanvasX(b), height);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+
+      // Draw Continuous Function Curve
+      ctx.strokeStyle = '#37352F';
+      ctx.lineWidth = 3 * scale;
+      ctx.beginPath();
+      for (let x = a; x <= b; x += 0.01) {
+        const px = toCanvasX(x);
+        const py = toCanvasY(f(x));
+        if (x === a) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Draw endpoint dots
+      ctx.fillStyle = '#37352F';
+      ctx.beginPath();
+      ctx.arc(toCanvasX(a), toCanvasY(fa), 5 * scale, 0, 2 * Math.PI);
+      ctx.arc(toCanvasX(b), toCanvasY(fb), 5 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Draw projection lines for intersection point c
+      ctx.strokeStyle = '#0f766e';
+      ctx.lineWidth = 1.5 * scale;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(c), toCanvasY(k));
+      ctx.lineTo(toCanvasX(c), height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw intersection dot at (c, k)
+      ctx.fillStyle = '#0f766e';
+      ctx.beginPath();
+      ctx.arc(toCanvasX(c), toCanvasY(k), 6 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Labels
+      ctx.font = `600 ${11 * scale}px Outfit`;
+      ctx.fillStyle = '#37352F';
+      ctx.fillText('(a, f(a))', toCanvasX(a) - 45 * scale, toCanvasY(fa) - 10 * scale);
+      ctx.fillText('(b, f(b))', toCanvasX(b) + 10 * scale, toCanvasY(fb) - 10 * scale);
+
+      ctx.fillStyle = '#e5484d';
+      ctx.fillText(`y = k (${k.toFixed(2)})`, 10 * scale, toCanvasY(k) - 8 * scale);
+
+      ctx.fillStyle = '#0f766e';
+      ctx.fillText(`c = ${c.toFixed(2)}`, toCanvasX(c) + 8 * scale, height - 12 * scale);
+    }
+
+    kRange.addEventListener('input', draw);
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Initial setup
+    setTimeout(resizeCanvas, 100);
+  </script>
+</body>
+</html>

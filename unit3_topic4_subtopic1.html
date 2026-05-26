@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One-Sided Limits Simulation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --notion-bg-main:    #FFFFFF;
+      --notion-bg-sidebar: #F7F7F5;
+      --notion-hover-sidebar: #EFEFEE;
+      --notion-hover-main:    #F1F1EF;
+      --notion-text-primary:     #37352F;
+      --notion-text-secondary:   #787774;
+      --notion-text-placeholder: #9A9A97;
+      --notion-border: #E9E9E7;
+      --accent-color: #3e63dd;
+      --lhl-color: #dd633e; /* Orange for Left-hand Limit */
+      --rhl-color: #0f766e; /* Teal for Right-hand Limit */
+      --warning-red: #e5484d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--notion-bg-main);
+      color: var(--notion-text-primary);
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background-color: var(--notion-bg-sidebar);
+      border: 1px solid var(--notion-border);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+    }
+
+    .prediction-prompt {
+      background-color: var(--notion-bg-main);
+      border-left: 4px solid var(--accent-color);
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--notion-text-primary);
+      font-weight: 400;
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 25px;
+    }
+
+    @media (min-width: 650px) {
+      .main-layout {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .canvas-container {
+      position: relative;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      width: 100%;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .value-display {
+      font-weight: 400;
+      color: var(--notion-text-secondary);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--notion-border);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .indicator-card {
+      padding: 15px;
+      border-radius: 8px;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .lhl-text { color: var(--lhl-color); font-weight: 600; }
+    .rhl-text { color: var(--rhl-color); font-weight: 600; }
+    .warning-text { color: var(--warning-red); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>One-Sided Limits in Piecewise Functions</h1>
+    
+    <div class="prediction-prompt">
+      <strong>Prediction Prompt:</strong> Before moving the sliders: If the values you approach from the left and right are different, what does this tell you about the standard two-sided limit?
+    </div>
+
+    <div class="main-layout">
+      <div class="canvas-container">
+        <canvas id="simCanvas"></canvas>
+      </div>
+
+      <div class="controls-panel">
+        <div class="indicator-card">
+          Function <strong>f(x)</strong>:<br>
+          &bull; <strong>x + 1</strong> for x &lt; 2<br>
+          &bull; <strong>-x + 4</strong> for x &ge; 2
+        </div>
+
+        <div class="control-group">
+          <label for="xLeft">
+            <span class="lhl-text">Left Approach (x &rarr; 2⁻)</span>
+            <span class="value-display" id="xlVal">1.20</span>
+          </label>
+          <input type="range" id="xLeft" min="0.5" max="1.99" step="0.01" value="1.2">
+        </div>
+
+        <div class="control-group">
+          <label for="xRight">
+            <span class="rhl-text">Right Approach (x &rarr; 2⁺)</span>
+            <span class="value-display" id="xrVal">2.80</span>
+          </label>
+          <input type="range" id="xRight" min="2.01" max="3.5" step="0.01" value="2.8">
+        </div>
+
+        <div class="indicator-card">
+          <strong>Limit Outputs as x &rarr; 2:</strong><br>
+          LHL (Left Limit): <span id="outLHL" class="lhl-text">2.20</span><br>
+          RHL (Right Limit): <span id="outRHL" class="rhl-text">1.20</span><br>
+          Two-Sided Limit: <span id="outLimit" class="warning-text">Does Not Exist (LHL &ne; RHL)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const xLeft = document.getElementById('xLeft');
+    const xRight = document.getElementById('xRight');
+    const xlVal = document.getElementById('xlVal');
+    const xrVal = document.getElementById('xrVal');
+    const outLHL = document.getElementById('outLHL');
+    const outRHL = document.getElementById('outRHL');
+    const outLimit = document.getElementById('outLimit');
+
+    const limitPt = 2;
+
+    const f = (x) => {
+      if (x < limitPt) return x + 1;
+      return -x + 4;
+    };
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      draw();
+    }
+
+    // Grid coordinates
+    // x range [0, 4]
+    // y range [0, 4]
+    const xMin = 0, xMax = 4;
+    const yMin = 0, yMax = 4;
+
+    function toCanvasX(x) {
+      const pct = (x - xMin) / (xMax - xMin);
+      return pct * canvas.width;
+    }
+
+    function toCanvasY(y) {
+      const pct = (y - yMin) / (yMax - yMin);
+      return canvas.height - (pct * canvas.height);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const width = canvas.width;
+      const height = canvas.height;
+      const scale = width / 400;
+      ctx.lineWidth = 1.5 * scale;
+
+      const xl = parseFloat(xLeft.value);
+      const xr = parseFloat(xRight.value);
+
+      xlVal.innerText = xl.toFixed(2);
+      xrVal.innerText = xr.toFixed(2);
+
+      const yl = f(xl);
+      const yr = f(xr);
+
+      outLHL.innerText = yl.toFixed(2);
+      outRHL.innerText = yr.toFixed(2);
+
+      // Grid lines
+      ctx.strokeStyle = '#E9E9E7';
+      ctx.lineWidth = 0.7 * scale;
+      for (let x = xMin; x <= xMax; x += 0.5) {
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(x), 0);
+        ctx.lineTo(toCanvasX(x), height);
+        ctx.stroke();
+      }
+      for (let y = yMin; y <= yMax; y += 0.5) {
+        ctx.beginPath();
+        ctx.moveTo(0, toCanvasY(y));
+        ctx.lineTo(width, toCanvasY(y));
+        ctx.stroke();
+      }
+
+      // Draw Piecewise Function Curve
+      ctx.strokeStyle = '#787774';
+      ctx.lineWidth = 3 * scale;
+      
+      // Left piece: x in [0, 2)
+      ctx.beginPath();
+      for (let x = 0; x < 2; x += 0.01) {
+        const px = toCanvasX(x);
+        const py = toCanvasY(x + 1);
+        if (x === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Right piece: x in [2, 4]
+      ctx.beginPath();
+      for (let x = 2; x <= 4; x += 0.01) {
+        const px = toCanvasX(x);
+        const py = toCanvasY(-x + 4);
+        if (x === 2) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Draw endpoint circles at x=2
+      // Left endpoint (2, 3) is open
+      ctx.strokeStyle = '#787774';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.lineWidth = 2 * scale;
+      ctx.beginPath();
+      ctx.arc(toCanvasX(2), toCanvasY(3), 5 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.stroke();
+
+      // Right endpoint (2, 2) is closed
+      ctx.fillStyle = '#787774';
+      ctx.beginPath();
+      ctx.arc(toCanvasX(2), toCanvasY(2), 5 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Draw Left approaching point
+      ctx.fillStyle = '#dd633e';
+      ctx.beginPath();
+      ctx.arc(toCanvasX(xl), toCanvasY(yl), 6 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Draw Right approaching point
+      ctx.fillStyle = '#0f766e';
+      ctx.beginPath();
+      ctx.arc(toCanvasX(xr), toCanvasY(yr), 6 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Label endpoints
+      ctx.font = `600 ${11 * scale}px Outfit`;
+      ctx.fillStyle = '#37352F';
+      ctx.fillText('(2, 3) open', toCanvasX(2) + 10 * scale, toCanvasY(3) - 4 * scale);
+      ctx.fillText('(2, 2) closed', toCanvasX(2) + 10 * scale, toCanvasY(2) + 12 * scale);
+    }
+
+    xLeft.addEventListener('input', draw);
+    xRight.addEventListener('input', draw);
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Initial setup
+    setTimeout(resizeCanvas, 100);
+  </script>
+</body>
+</html>

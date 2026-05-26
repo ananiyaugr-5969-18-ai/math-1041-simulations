@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Squeezing Theorem Simulation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --notion-bg-main:    #FFFFFF;
+      --notion-bg-sidebar: #F7F7F5;
+      --notion-hover-sidebar: #EFEFEE;
+      --notion-hover-main:    #F1F1EF;
+      --notion-text-primary:     #37352F;
+      --notion-text-secondary:   #787774;
+      --notion-text-placeholder: #9A9A97;
+      --notion-border: #E9E9E7;
+      --accent-color: #3e63dd;
+      --g-color: #e5484d; /* Red upper */
+      --h-color: #0f766e; /* Green lower */
+      --f-color: #3e63dd; /* Blue squeezed */
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--notion-bg-main);
+      color: var(--notion-text-primary);
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background-color: var(--notion-bg-sidebar);
+      border: 1px solid var(--notion-border);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-weight: 700;
+      font-size: 1.8rem;
+      letter-spacing: -0.02em;
+    }
+
+    .prediction-prompt {
+      background-color: var(--notion-bg-main);
+      border-left: 4px solid var(--accent-color);
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--notion-text-primary);
+      font-weight: 400;
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 25px;
+    }
+
+    @media (min-width: 650px) {
+      .main-layout {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .canvas-container {
+      position: relative;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      width: 100%;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .value-display {
+      font-weight: 400;
+      color: var(--notion-text-secondary);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--notion-border);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: var(--notion-bg-main);
+      border: 1px solid var(--notion-border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .data-table th, .data-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--notion-border);
+    }
+
+    .data-table th {
+      background-color: var(--notion-bg-sidebar);
+      font-weight: 600;
+    }
+
+    .label-g { color: var(--g-color); font-weight: 600; }
+    .label-f { color: var(--f-color); font-weight: 600; }
+    .label-h { color: var(--h-color); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>The Squeezing (Sandwich) Theorem</h1>
+    
+    <div class="prediction-prompt">
+      <strong>Prediction Prompt:</strong> Before moving the slider: If the upper function g(x) and the lower function h(x) both approach 1 as x approaches 0, what does this tell you about the middle function f(x), even if f(x) oscillates infinitely?
+    </div>
+
+    <div class="main-layout">
+      <div class="canvas-container">
+        <canvas id="simCanvas"></canvas>
+      </div>
+
+      <div class="controls-panel">
+        <div class="control-group">
+          <label for="xRange">
+            <span>Current position (x)</span>
+            <span class="value-display" id="xVal">0.50</span>
+          </label>
+          <input type="range" id="xRange" min="-1" max="1" step="0.01" value="0.5">
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Function</th>
+              <th>Formula</th>
+              <th>Value at x</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="label-g">g(x) (Upper)</td>
+              <td>x² + 1</td>
+              <td id="valG">1.250</td>
+            </tr>
+            <tr>
+              <td class="label-f">f(x) (Squeezed)</td>
+              <td>x² sin(8/x) + 1</td>
+              <td id="valF">1.189</td>
+            </tr>
+            <tr>
+              <td class="label-h">h(x) (Lower)</td>
+              <td>-x² + 1</td>
+              <td id="valH">0.750</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="font-size: 0.85rem; color: var(--notion-text-secondary); line-height: 1.5;">
+          Note how <strong>h(x) &le; f(x) &le; g(x)</strong> is satisfied at every point. As x &rarr; 0, the gap between g(x) and h(x) closes, forcing f(x) to approach 1.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    const xRange = document.getElementById('xRange');
+    const xVal = document.getElementById('xVal');
+    const valG = document.getElementById('valG');
+    const valF = document.getElementById('valF');
+    const valH = document.getElementById('valH');
+
+    // Formulas
+    const g = (x) => x * x + 1;
+    const h = (x) => -x * x + 1;
+    const f = (x) => {
+      if (Math.abs(x) < 1e-5) return 1.0;
+      return x * x * Math.sin(8 / x) + 1;
+    };
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      draw();
+    }
+
+    // Grid coordinates
+    // x range [-1.2, 1.2]
+    // y range [-0.2, 2.2]
+    const xMin = -1.2, xMax = 1.2;
+    const yMin = -0.2, yMax = 2.2;
+
+    function toCanvasX(x) {
+      const pct = (x - xMin) / (xMax - xMin);
+      return pct * canvas.width;
+    }
+
+    function toCanvasY(y) {
+      const pct = (y - yMin) / (yMax - yMin);
+      return canvas.height - (pct * canvas.height);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const width = canvas.width;
+      const height = canvas.height;
+      const scale = width / 400;
+      ctx.lineWidth = 1.5 * scale;
+
+      const cx = parseFloat(xRange.value);
+      xVal.innerText = cx.toFixed(2);
+
+      const vg = g(cx);
+      const vf = f(cx);
+      const vh = h(cx);
+
+      valG.innerText = vg.toFixed(4);
+      valF.innerText = vf.toFixed(4);
+      valH.innerText = vh.toFixed(4);
+
+      // Grid lines
+      ctx.strokeStyle = '#E9E9E7';
+      ctx.lineWidth = 0.7 * scale;
+      for (let x = -1.0; x <= 1.0; x += 0.2) {
+        ctx.beginPath();
+        ctx.moveTo(toCanvasX(x), 0);
+        ctx.lineTo(toCanvasX(x), height);
+        ctx.stroke();
+      }
+      for (let y = 0.0; y <= 2.0; y += 0.25) {
+        ctx.beginPath();
+        ctx.moveTo(0, toCanvasY(y));
+        ctx.lineTo(width, toCanvasY(y));
+        ctx.stroke();
+      }
+
+      // Draw Upper Function g(x) = x^2 + 1
+      ctx.strokeStyle = '#e5484d';
+      ctx.lineWidth = 2 * scale;
+      ctx.beginPath();
+      for (let x = xMin; x <= xMax; x += 0.01) {
+        const px = toCanvasX(x);
+        const py = toCanvasY(g(x));
+        if (x === xMin) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Draw Lower Function h(x) = -x^2 + 1
+      ctx.strokeStyle = '#0f766e';
+      ctx.lineWidth = 2 * scale;
+      ctx.beginPath();
+      for (let x = xMin; x <= xMax; x += 0.01) {
+        const px = toCanvasX(x);
+        const py = toCanvasY(h(x));
+        if (x === xMin) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Draw Squeezed Function f(x)
+      ctx.strokeStyle = '#3e63dd';
+      ctx.lineWidth = 1.5 * scale;
+      ctx.beginPath();
+      // Increase sampling rate to capture high-frequency oscillation near x=0
+      for (let x = xMin; x <= xMax; x += 0.002) {
+        const px = toCanvasX(x);
+        const py = toCanvasY(f(x));
+        if (x === xMin) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // Draw vertical indicator line at current x
+      ctx.strokeStyle = 'rgba(55, 53, 47, 0.2)';
+      ctx.lineWidth = 1 * scale;
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(cx), 0);
+      ctx.lineTo(toCanvasX(cx), height);
+      ctx.stroke();
+
+      // Draw indicator points
+      // Upper point g(x)
+      ctx.fillStyle = '#e5484d';
+      ctx.beginPath();
+      ctx.arc(toCanvasX(cx), toCanvasY(vg), 5 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Lower point h(x)
+      ctx.fillStyle = '#0f766e';
+      ctx.beginPath();
+      ctx.arc(toCanvasX(cx), toCanvasY(vh), 5 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Squeezed point f(x)
+      ctx.fillStyle = '#3e63dd';
+      ctx.beginPath();
+      ctx.arc(toCanvasX(cx), toCanvasY(vf), 5 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Limit Point (0, 1)
+      ctx.fillStyle = '#37352F';
+      ctx.beginPath();
+      ctx.arc(toCanvasX(0), toCanvasY(1), 6 * scale, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Label limit point
+      ctx.font = `600 ${11 * scale}px Outfit`;
+      ctx.fillStyle = '#37352F';
+      ctx.fillText('(0, 1)', toCanvasX(0) + 10 * scale, toCanvasY(1) - 8 * scale);
+    }
+
+    xRange.addEventListener('input', draw);
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Initial setup
+    setTimeout(resizeCanvas, 100);
+  </script>
+</body>
+</html>
